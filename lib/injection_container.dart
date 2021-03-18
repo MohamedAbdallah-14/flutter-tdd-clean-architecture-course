@@ -1,3 +1,4 @@
+import 'package:clean_architecture_tdd_course/features/number_trivia/domain/usecases/get_year_number_trivia.dart';
 import 'package:data_connection_checker/data_connection_checker.dart';
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
@@ -22,13 +23,14 @@ Future<void> init() async {
     () => NumberTriviaBloc(
       concrete: sl(),
       inputConverter: sl(),
-      random: sl(),
+      random: sl(), year: sl(),
     ),
   );
 
   // Use cases
   sl.registerLazySingleton(() => GetConcreteNumberTrivia(sl()));
   sl.registerLazySingleton(() => GetRandomNumberTrivia(sl()));
+  sl.registerLazySingleton(() => GetYearNumberTrivia(sl()));
 
   // Repository
   sl.registerLazySingleton<NumberTriviaRepository>(
