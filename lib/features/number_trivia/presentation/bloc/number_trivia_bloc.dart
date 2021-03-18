@@ -10,6 +10,10 @@ import 'package:meta/meta.dart';
 import './bloc.dart';
 import '../../../../core/util/input_converter.dart';
 import '../../domain/usecases/get_concrete_number_trivia.dart';
+
+import 'package:clean_architecture_tdd_course/features/number_trivia/domain/usecases/get_year_number_trivia.dart'
+as GetYearNumber;
+
 import '../../domain/usecases/get_random_number_trivia.dart';
 
 const String SERVER_FAILURE_MESSAGE = 'Server Failure';
@@ -20,37 +24,40 @@ const String INVALID_INPUT_FAILURE_MESSAGE =
 class NumberTriviaBloc extends Bloc<NumberTriviaEvent, NumberTriviaState> {
   final GetConcreteNumberTrivia getConcreteNumberTrivia;
   final GetRandomNumberTrivia getRandomNumberTrivia;
+  final GetYearNumber.GetYearNumberTrivia getYearNumberTrivia;
   final InputConverter inputConverter;
 
   NumberTriviaBloc({
     @required GetConcreteNumberTrivia concrete,
     @required GetRandomNumberTrivia random,
+    @required GetYearNumber.GetYearNumberTrivia year,
     @required this.inputConverter,
   })  : assert(concrete != null),
         assert(random != null),
         assert(inputConverter != null),
         getConcreteNumberTrivia = concrete,
-        getRandomNumberTrivia = random;
+        getRandomNumberTrivia = random,
+        getYearNumberTrivia = year;
 
   @override
   NumberTriviaState get initialState => Empty();
 
   @override
   Stream<NumberTriviaState> mapEventToState(
-    NumberTriviaEvent event,
-  ) async* {
+      NumberTriviaEvent event,
+      ) async* {
     if (event is GetTriviaForConcreteNumber) {
       final inputEither =
-          inputConverter.stringToUnsignedInteger(event.numberString);
+      inputConverter.stringToUnsignedInteger(event.numberString);
 
       yield* inputEither.fold(
-        (failure) async* {
+            (failure) async* {
           yield Error(message: INVALID_INPUT_FAILURE_MESSAGE);
         },
-        (integer) async* {
+            (integer) async* {
           yield Loading();
           final failureOrTrivia =
-              await getConcreteNumberTrivia(Params(number: integer));
+          await getConcreteNumberTrivia(Params(number: integer));
           yield* _eitherLoadedOrErrorState(failureOrTrivia);
         },
       );
@@ -58,15 +65,30 @@ class NumberTriviaBloc extends Bloc<NumberTriviaEvent, NumberTriviaState> {
       yield Loading();
       final failureOrTrivia = await getRandomNumberTrivia(NoParams());
       yield* _eitherLoadedOrErrorState(failureOrTrivia);
+    } else if (event is GetTriviaForYearNumber) {
+      final inputEither =
+      inputConverter.stringToUnsignedInteger(event.numberString);
+
+      yield* inputEither.fold(
+            (failure) async* {
+          yield Error(message: INVALID_INPUT_FAILURE_MESSAGE);
+        },
+            (integer) async* {
+          yield Loading();
+          final failureOrTrivia =
+          await getYearNumberTrivia(GetYearNumber.Params(number: integer));
+          yield* _eitherLoadedOrErrorState(failureOrTrivia);
+        },
+      );
     }
   }
 
   Stream<NumberTriviaState> _eitherLoadedOrErrorState(
-    Either<Failure, NumberTrivia> failureOrTrivia,
-  ) async* {
+      Either<Failure, NumberTrivia> failureOrTrivia,
+      ) async* {
     yield failureOrTrivia.fold(
-      (failure) => Error(message: _mapFailureToMessage(failure)),
-      (trivia) => Loaded(trivia: trivia),
+          (failure) => Error(message: _mapFailureToMessage(failure)),
+          (trivia) => Loaded(trivia: trivia),
     );
   }
 
